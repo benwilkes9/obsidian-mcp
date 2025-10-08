@@ -52,18 +52,77 @@ uv run python main.py
 
 ## Testing and quality
 
-Run your test suite (assuming `pytest` or similar is configured) through `uv` so the virtual environment is automatically managed:
+This project uses `ruff` for linting and formatting, `pyright` for type checking, and `pytest` for testing. Pre-commit hooks and GitHub Actions enforce these checks.
+
+### Formatting
+
+Format code with ruff:
+
+```bash
+uv run ruff format .
+```
+
+### Linting
+
+Check for linting issues:
+
+```bash
+uv run ruff check .
+```
+
+Auto-fix linting issues:
+
+```bash
+uv run ruff check --fix .
+```
+
+### Type checking
+
+Run type checks with pyright:
+
+```bash
+uv run pyright
+```
+
+### Testing
+
+Run tests with pytest:
 
 ```bash
 uv run pytest
 ```
 
-If you add linters or formatters (for example, `ruff` or `black`), invoke them the same way:
+### Pre-commit hooks
+
+Pre-commit hooks automatically run ruff formatting, linting, pyright type checking, and pytest before each commit.
+
+Install the hooks (done automatically after `uv sync`):
 
 ```bash
-uv run ruff check
-uv run ruff format
+uv run pre-commit install
 ```
+
+Run hooks manually on all files:
+
+```bash
+uv run pre-commit run --all-files
+```
+
+### Continuous Integration
+
+GitHub Actions runs all quality checks (formatting, linting, type checking, and tests) on every push and pull request to the `main` branch. See `.github/workflows/ci.yml` for details.
+
+### Branch Protection
+
+To enforce code quality, configure branch protection rules on GitHub:
+
+1. Go to your repository's Settings → Branches
+2. Add a branch protection rule for `main`
+3. Enable:
+   - "Require a pull request before merging"
+   - "Require status checks to pass before merging"
+   - Select the "lint-and-test" CI check
+   - "Do not allow bypassing the above settings"
 
 ## Project layout
 
