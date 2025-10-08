@@ -127,4 +127,5 @@ To enforce code quality, configure branch protection rules on GitHub:
 ## Project layout
 
 - `main.py` – entry point script that currently prints a greeting
+- `tests/` – test directory containing pytest tests
 - `pyproject.toml` – project metadata and dependency declarations for `uv`
