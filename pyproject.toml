@@ -1,0 +1,48 @@
+[project]
+name = "obsidian-mcp"
+version = "0.1.0"
+description = "MCP Server for context engineering with local Obsidian vaults"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pyright>=1.1.406",
+    "ruff>=0.14.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["obsidian_mcp"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.12"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedVariable = true
+reportUnusedImport = true
