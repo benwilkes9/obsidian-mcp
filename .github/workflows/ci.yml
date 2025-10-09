@@ -1,12 +1,10 @@
 name: CI
 
 on:
-  push:
-    branches-ignore:
-      - main
   pull_request:
     branches:
       - main
+  push:  # runs on push to any branch
 
 jobs:
   lint-and-test:
