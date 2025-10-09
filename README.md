@@ -4,62 +4,83 @@ MCP Server for context engineering with local Obsidian vaults.
 
 ## Prerequisites
 
-- Python 3.12 or newer
-- [`uv`](https://docs.astral.sh/uv/) for dependency and virtual environment management
+- Node.js 18 or newer
+- npm (comes with Node.js)
 
 ## Setup
 
-Clone the repository and install dependencies into the automatically managed virtual environment:
+Clone the repository and install dependencies:
 
 ```bash
 git clone https://github.com/benwilkes9/obsidian-mcp.git
 cd obsidian-mcp
-uv sync
+npm install
 ```
 
-`uv sync` resolves the lockfile (if present) or the `[project]` section in `pyproject.toml`, creates a `.venv`, and installs everything declared there.
+## Building
+
+Build the TypeScript source to JavaScript:
+
+```bash
+npm run build
+```
+
+For development with automatic rebuilding:
+
+```bash
+npm run watch
+```
 
 ## Running the app
 
-Use `uv run` to execute the project with all synced dependencies available on the `PYTHONPATH`:
+After building, run the server:
 
 ```bash
-uv run python main.py
+node dist/cli.js
 ```
 
-`uv run` ensures the virtual environment is activated for the duration of the command.
+Or use MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector node dist/cli.js
+```
 
 ## Managing dependencies
 
 - Add a runtime dependency:
 
-	```bash
-	uv add <package-name>
-	```
+  ```bash
+  npm install <package-name>
+  ```
 
 - Add a development-only dependency:
 
-	```bash
-	uv add --dev <package-name>
-	```
+  ```bash
+  npm install --save-dev <package-name>
+  ```
 
-- Upgrade dependencies to their latest allowed versions:
+- Update dependencies:
 
-	```bash
-	uv lock --upgrade
-	uv sync
-	```
+  ```bash
+  npm update
+  ```
 
 ## Testing and quality
 
-This project uses `ruff` for linting and formatting, `pyright` for type checking, and `pytest` for testing. Pre-commit hooks and GitHub Actions enforce these checks.
+This project uses `prettier` for formatting, `eslint` for linting, TypeScript for type checking, and `jest` for testing. GitHub Actions enforces these checks.
 
 ### Formatting
 
-Format code with ruff:
+Format code with prettier:
 
 ```bash
-uv run ruff format .
+npm run format
+```
+
+Check formatting without making changes:
+
+```bash
+npm run format:check
 ```
 
 ### Linting
@@ -67,65 +88,50 @@ uv run ruff format .
 Check for linting issues:
 
 ```bash
-uv run ruff check .
-```
-
-Auto-fix linting issues:
-
-```bash
-uv run ruff check --fix .
+npm run lint
 ```
 
 ### Type checking
 
-Run type checks with pyright:
+Run type checks with TypeScript:
 
 ```bash
-uv run pyright
+npm run typecheck
 ```
 
 ### Testing
 
-Run tests with pytest:
+Run tests with jest:
 
 ```bash
-uv run pytest
+npm test                    # Run all tests
+npm test -- --watch         # Run tests in watch mode
+npm run test:coverage       # Run tests with coverage report
+npm run test:coverage:watch # Run tests with coverage in watch mode
 ```
 
-### Pre-commit hooks
-
-Pre-commit hooks automatically run ruff formatting, linting, pyright type checking, and pytest before each commit.
-
-Install the hooks (done automatically after `uv sync`):
-
-```bash
-uv run pre-commit install
-```
-
-Run hooks manually on all files:
-
-```bash
-uv run pre-commit run --all-files
-```
+Coverage reports are generated in the `coverage/` directory with HTML reports viewable at `coverage/index.html`.
 
 ### Continuous Integration
 
-GitHub Actions runs all quality checks (formatting, linting, type checking, and tests) on every push and pull request to the `main` branch. See `.github/workflows/ci.yml` for details.
+GitHub Actions runs all quality checks (formatting, linting, type checking, tests, and build) on every push and pull request to a branch. See `.github/workflows/ci.yml` for details.
 
-### Branch Protection
+### Pre-commit Hooks
 
-To enforce code quality, configure branch protection rules on GitHub:
+Husky runs the following checks before each commit:
 
-1. Go to your repository's Settings → Branches
-2. Add a branch protection rule for `main`
-3. Enable:
-   - "Require a pull request before merging"
-   - "Require status checks to pass before merging"
-   - Select the "lint-and-test" CI check
-   - "Do not allow bypassing the above settings"
+- **lint-staged**: Formats and lints only changed files
+- **test:coverage**: Runs all tests with coverage to ensure code quality
+
+If any check fails, the commit will be blocked until issues are resolved.
 
 ## Project layout
 
-- `main.py` – entry point script that currently prints a greeting
-- `tests/` – test directory containing pytest tests
-- `pyproject.toml` – project metadata and dependency declarations for `uv`
+- `src/cli.ts` – CLI entry point for the MCP server
+- `src/server.ts` – main server class (can be imported as a library)
+- `src/__tests__/` – test files
+- `package.json` – project metadata and dependency declarations
+- `tsconfig.json` – TypeScript compiler configuration
+- `.prettierrc` – code formatting configuration
+- `eslint.config.js` – linting configuration
+- `jest.config.js` – testing configuration
