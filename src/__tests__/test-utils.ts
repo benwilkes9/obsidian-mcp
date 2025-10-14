@@ -8,13 +8,27 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 /**
+ * Mock type for MCP request handler extra context.
+ * This represents additional metadata passed to tool handlers.
+ */
+export type MockRequestHandlerExtra = Record<string, never>;
+
+/**
+ * Mock type for tool callback arguments.
+ */
+export type MockToolArgs = Record<string, unknown>;
+
+/**
  * Helper to call a tool callback directly with typed results
  */
 export async function callToolCallback<T = unknown>(
-  callback: (args: any, extra: any) => CallToolResult | Promise<CallToolResult>,
-  args: Record<string, unknown> = {}
+  callback: (
+    args: MockToolArgs,
+    extra: MockRequestHandlerExtra
+  ) => CallToolResult | Promise<CallToolResult>,
+  args: MockToolArgs = {}
 ) {
-  const result = await callback(args as any, {} as any);
+  const result = await callback(args, {});
   return {
     ...result,
     structuredContent: result.structuredContent as T,

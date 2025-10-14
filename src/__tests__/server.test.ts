@@ -1,4 +1,4 @@
-import { ObsidianMCPServer } from "../server";
+import { ObsidianMCPServer } from "../server.js";
 
 describe("ObsidianMCPServer", () => {
   let server: ObsidianMCPServer;
