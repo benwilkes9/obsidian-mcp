@@ -6,6 +6,11 @@ on:
       - main
   push: # runs on push to any branch
 
+# Required permissions for code scanning uploads
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   # Secret scanning runs first and independently
   secret-scan:
