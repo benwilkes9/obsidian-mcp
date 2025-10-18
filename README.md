@@ -114,7 +114,22 @@ Coverage reports are generated in the `coverage/` directory with HTML reports vi
 
 ### Continuous Integration
 
-GitHub Actions runs all quality checks (formatting, linting, type checking, tests, and build) on every push and pull request to a branch. See `.github/workflows/ci.yml` for details.
+GitHub Actions runs multiple checks in parallel on every push and pull request:
+
+**Security scans:**
+
+- **GitGuardian** - Detects hardcoded secrets and credentials
+- **Semgrep** - Finds security vulnerabilities and bug patterns
+
+**Code quality:**
+
+- **Prettier** - Formatting check
+- **ESLint** - Linting
+- **TypeScript** - Type checking
+- **Jest** - Tests with coverage
+- **Build** - Compilation check
+
+See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details.
 
 ### Secret Scanning
 
@@ -127,6 +142,25 @@ Dashboard: https://dashboard.gitguardian.com/
 See https://github.com/GitGuardian/ggshield
 
 If ggshield is not installed, the pre-commit hook will skip secret scanning locally but will still run in CI.
+
+### Static Analysis with Semgrep
+
+Semgrep automatically scans for security vulnerabilities and bug patterns in CI. It's configured with:
+
+- **Auto-detection**: Uses community rules for TypeScript/Node.js
+- **Custom rules** for MCP servers (see [.semgrep.yml](.semgrep.yml)):
+
+**Local scanning (optional):**
+
+```bash
+# Run scan
+semgrep scan --config auto
+
+# Or use custom rules only
+semgrep scan --config .semgrep.yml
+```
+
+Findings appear in GitHub's Security tab under "Code scanning alerts" when running in CI.
 
 ### Pre-commit Hooks
 

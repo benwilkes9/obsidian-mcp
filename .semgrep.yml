@@ -1,0 +1,98 @@
+# Semgrep configuration for obsidian-mcp
+# https://semgrep.dev/docs/writing-rules/rule-syntax/
+
+rules:
+  # MCP Server specific: Prevent console.log in stdio servers
+  - id: mcp-no-console-log
+    pattern: console.log(...)
+    message: |
+      MCP servers run over stdio. Use console.error() for logging instead of console.log()
+      to avoid interfering with the MCP protocol communication.
+    languages: [typescript, javascript]
+    severity: WARNING
+    paths:
+      include:
+        - src/**
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # Security: Detect path traversal vulnerabilities
+  - id: node-path-traversal
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $PATH = $INPUT + ...
+              fs.$METHOD($PATH, ...)
+          - pattern: |
+              $PATH = `${$INPUT}...`
+              fs.$METHOD($PATH, ...)
+      - metavariable-pattern:
+          metavariable: $METHOD
+          patterns:
+            - pattern-either:
+                - pattern: readFile
+                - pattern: readFileSync
+                - pattern: writeFile
+                - pattern: writeFileSync
+                - pattern: unlink
+                - pattern: unlinkSync
+                - pattern: readdir
+                - pattern: readdirSync
+    message: |
+      Potential path traversal vulnerability. Validate and sanitize user input before
+      using it in file system operations. Use path.resolve() and check the result.
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  # Security: Detect command injection
+  - id: node-command-injection
+    patterns:
+      - pattern-either:
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: spawn($CMD, ...)
+          - pattern: spawnSync($CMD, ...)
+      - pattern-not: exec("...", ...)
+      - pattern-not: execSync("...", ...)
+    message: |
+      Potential command injection vulnerability. Avoid using user input in shell commands.
+      Use execFile() or pass arguments as an array instead of string concatenation.
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  # Best practice: Async file operations in Node.js
+  - id: node-prefer-async-fs
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFileSync(...)
+          - pattern: fs.writeFileSync(...)
+          - pattern: fs.readdirSync(...)
+      - pattern-not-inside: |
+          try {
+            ...
+          } catch (...) {
+            ...
+          }
+    message: |
+      Consider using async file operations (readFile, writeFile, readdir) instead of
+      sync versions to avoid blocking the event loop, unless you're in initialization code.
+    languages: [typescript, javascript]
+    severity: INFO
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect overly permissive 'any' types
+  - id: typescript-avoid-any
+    pattern: |
+      const $VAR: any = ...
+    message: |
+      Avoid using 'any' type. Use specific types or 'unknown' with type guards for better type safety.
+    languages: [typescript]
+    severity: INFO
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"

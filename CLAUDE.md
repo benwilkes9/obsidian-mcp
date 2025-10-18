@@ -140,6 +140,43 @@ To bypass pre-commit hooks (not recommended): `git commit --no-verify`
 - **CI:** Scans all changes in PRs and pushes (fails build if secrets detected)
 - Detects: API keys, tokens, passwords, private keys, database credentials, etc.
 
+### Static Analysis with Semgrep
+
+**What it does:**
+
+- **CI only:** Scans for security vulnerabilities and bug patterns
+- Runs in parallel with other CI jobs
+- Results appear in GitHub Security tab as "Code scanning alerts"
+
+**MCP-specific custom rules** (`.semgrep.yml`):
+
+1. **`mcp-no-console-log`** - Prevents `console.log()` in stdio servers (should use `console.error()`)
+2. **`node-path-traversal`** - Detects unsafe file path handling that could access system files
+3. **`node-command-injection`** - Catches potential shell injection vulnerabilities
+4. **`node-prefer-async-fs`** - Suggests async file operations to avoid blocking event loop
+5. **`typescript-avoid-any`** - Flags overly permissive `any` types
+
+**Community rulesets** (auto-enabled):
+
+- TypeScript/JavaScript security rules
+- Node.js best practices
+- Common bug patterns (null checks, regex issues, etc.)
+
+**Local testing:**
+
+```bash
+# Run all rules
+semgrep scan --config auto
+
+# Run only custom MCP rules
+semgrep scan --config .semgrep.yml
+
+# Run and see detailed explanations
+semgrep scan --config auto --verbose
+```
+
+**No token required** - Semgrep Community Edition works without authentication for public repos.
+
 ## Testing MCP Tools
 
 ### Testing Philosophy
