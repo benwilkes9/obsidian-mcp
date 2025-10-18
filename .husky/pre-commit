@@ -1,2 +1,10 @@
+# Run GitGuardian secret scan
+if command -v ggshield &> /dev/null; then
+  ggshield secret scan pre-commit
+else
+  echo "⚠️  ggshield not found. Install with: pip install ggshield"
+  echo "   Skipping secret scan (will still run in CI)"
+fi
+
 npx lint-staged
 npm run test:coverage

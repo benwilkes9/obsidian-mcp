@@ -1,0 +1,26 @@
+# GitGuardian configuration
+# https://docs.gitguardian.com/ggshield-docs/reference/configuration
+
+# Version of the configuration file
+version: 2
+
+# Secret scanning configuration
+secret:
+  # Show secrets in plaintext in output (useful for fixing)
+  show_secrets: false
+
+  # Paths to ignore during scanning
+  ignored_paths:
+    - "node_modules/**"
+    - "dist/**"
+    - "coverage/**"
+    - "*.lock"
+    - "package-lock.json"
+    - "*.test.ts"
+    - "**/__tests__/**"
+
+  # Ignore specific matches (add secret hashes here if you get false positives)
+  ignored_matches: []
+
+# Exit with error code if secrets are found
+exit_zero: false

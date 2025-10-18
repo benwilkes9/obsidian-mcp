@@ -116,12 +116,25 @@ Coverage reports are generated in the `coverage/` directory with HTML reports vi
 
 GitHub Actions runs all quality checks (formatting, linting, type checking, tests, and build) on every push and pull request to a branch. See `.github/workflows/ci.yml` for details.
 
+### Secret Scanning
+
+This project uses [GitGuardian](https://www.gitguardian.com/) to prevent secrets from being committed.
+
+Dashboard: https://dashboard.gitguardian.com/
+
+**Local setup (optional but recommended):**
+
+See https://github.com/GitGuardian/ggshield
+
+If ggshield is not installed, the pre-commit hook will skip secret scanning locally but will still run in CI.
+
 ### Pre-commit Hooks
 
 Husky runs the following checks before each commit:
 
-- **lint-staged**: Formats and lints only changed files
-- **test:coverage**: Runs all tests with coverage to ensure code quality
+1. **ggshield secret scan**: Scans for API keys, tokens, and other secrets
+2. **lint-staged**: Formats and lints only changed files
+3. **test:coverage**: Runs all tests with coverage to ensure code quality
 
 If any check fails, the commit will be blocked until issues are resolved.
 

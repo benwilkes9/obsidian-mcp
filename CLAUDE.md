@@ -126,10 +126,19 @@ npm run format:check && npm run lint && npm run typecheck && npm test && npm run
 
 Husky pre-commit hook automatically runs:
 
-1. **lint-staged** - Formats and lints only changed files (fast)
-2. **test:coverage** - Runs full test suite with coverage (ensures nothing breaks)
+1. **ggshield secret scan** - Scans for secrets/credentials (requires setup, see below)
+2. **lint-staged** - Formats and lints only changed files (fast)
+3. **test:coverage** - Runs full test suite with coverage (ensures nothing breaks)
 
 To bypass pre-commit hooks (not recommended): `git commit --no-verify`
+
+### Secret Scanning with GitGuardian
+
+**What it does:**
+
+- **Pre-commit:** Scans staged files for secrets before commit (gracefully skips if not installed)
+- **CI:** Scans all changes in PRs and pushes (fails build if secrets detected)
+- Detects: API keys, tokens, passwords, private keys, database credentials, etc.
 
 ## Testing MCP Tools
 
