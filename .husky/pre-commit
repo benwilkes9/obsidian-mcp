@@ -6,5 +6,5 @@ else
   echo "   Skipping secret scan (will still run in CI)"
 fi
 
-npx lint-staged
 npm run test:coverage
+npx lint-staged

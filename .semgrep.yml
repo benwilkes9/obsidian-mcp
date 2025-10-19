@@ -84,15 +84,78 @@ rules:
         - src/__tests__/**
         - "*.test.ts"
 
-  # TypeScript: Detect overly permissive 'any' types
-  - id: typescript-avoid-any
-    pattern: |
-      const $VAR: any = ...
+  # TypeScript: Detect explicit 'any' in variable/parameter declarations
+  - id: typescript-any-declarations
+    patterns:
+      - pattern-either:
+          # Variable declarations
+          - pattern: const $VAR: any = ...
+          - pattern: let $VAR: any = ...
+          - pattern: var $VAR: any = ...
+          # Function parameters
+          - pattern: |
+              function $FUNC(..., $ARG: any, ...) { ... }
+          - pattern: |
+              const $FUNC = (..., $ARG: any, ...) => { ... }
+          # Function return types
+          - pattern: |
+              function $FUNC(...): any { ... }
+          - pattern: |
+              const $FUNC = (...): any => { ... }
     message: |
-      Avoid using 'any' type. Use specific types or 'unknown' with type guards for better type safety.
+      Avoid explicit 'any' types in declarations. Consider alternatives:
+      - Use 'unknown' with type guards for better type safety
+      - Use specific union types if possible (e.g., 'string | number')
+      - Use generics for flexible but type-safe APIs
+
+      Only use 'any' when integrating with untyped libraries or as a last resort.
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect 'any' in array/record types
+  - id: typescript-any-collections
+    patterns:
+      - pattern-either:
+          - pattern: "any[]"
+          - pattern: Array<any>
+          - pattern: Record<string, any>
+          - pattern: Record<any, ...>
+          - pattern: Map<any, ...>
+          - pattern: Map<..., any>
+    message: |
+      Collection types with 'any' reduce type safety. Consider:
+      - For arrays: Use 'unknown[]' or specific union types
+      - For records: Use 'Record<string, unknown>' or define an interface
+      - For mixed types: Consider discriminated unions
+
+      Note: Record<string, any> is sometimes acceptable for JSON-like data.
     languages: [typescript]
     severity: INFO
     paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect type assertions to 'any' outside tests
+  - id: typescript-any-assertions
+    pattern: $EXPR as any
+    message: |
+      Type assertion to 'any' bypasses TypeScript's type checking.
+      This is acceptable in test files but should be avoided in production code.
+
+      Consider:
+      - Using proper types instead of casting
+      - Using 'unknown' if the type is truly unknown, then narrow with type guards
+      - Fixing the underlying type issue rather than suppressing it
+    languages: [typescript]
+    severity: INFO
+    paths:
+      include:
+        - src/**
       exclude:
         - src/__tests__/**
         - "*.test.ts"
