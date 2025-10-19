@@ -68,10 +68,17 @@ This is an **MCP (Model Context Protocol) server** for context engineering with 
    - `test(hello): add edge case tests for empty inputs`
    - `chore: update dependencies to latest versions`
 
-6. **Git commits** - When creating commits:
-   - Pre-commit hooks run automatically (Husky): secret scan, lint-staged, test:coverage
-   - Always check hook results and address failures before retrying
-   - If hooks fail: fix issues, stage fixes, then commit again
+6. **Git commits** - CRITICAL WORKFLOW for Claude Code:
+   - **ALWAYS run validation BEFORE committing:**
+     ```bash
+     npm run typecheck && npm run test:coverage
+     ```
+   - **Wait for validation output** - check for errors before proceeding
+   - **Show user `git status`** before committing
+   - **Only commit after validation passes**
+   - Pre-commit hooks run automatically (Husky): secret scan, typecheck, test:coverage, lint-staged
+   - Hook mirrors the manual validation (safety net)
+   - If hooks fail after manual validation passed: investigate why
    - Never use `--no-verify` unless explicitly requested by user
 
 ## Architecture
@@ -156,8 +163,9 @@ npx @modelcontextprotocol/inspector node dist/cli.js  # MCP Inspector
 **Pre-commit hooks** (via Husky):
 
 - Secret scanning (GitGuardian - gracefully skips if not installed)
-- Format/lint staged files (lint-staged)
-- Full test suite with coverage
+- TypeScript type checking (all files)
+- Full test suite with coverage (all files)
+- Auto-format and lint staged files (lint-staged)
 
 **CI pipeline** runs on all PRs/pushes in 2 stages:
 
