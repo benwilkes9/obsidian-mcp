@@ -6,9 +6,9 @@ else
   echo "   Skipping secret scan (will still run in CI)"
 fi
 
-# Run typecheck and tests (comprehensive checks on all files)
+# Format and lint staged files first (auto-fix before validation)
+npx lint-staged
+
+# Run typecheck and tests on all files (comprehensive validation)
 npm run typecheck
 npm run test:coverage
-
-# Format and lint staged files (auto-fix)
-npx lint-staged

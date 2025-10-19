@@ -113,6 +113,8 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # Reuse coverage from lint-and-test job instead of regenerating
+      # SonarCloud only needs the lcov.info report, not node_modules
       - name: Download coverage artifact
         uses: actions/download-artifact@v4
         with:

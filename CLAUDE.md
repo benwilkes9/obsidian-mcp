@@ -69,16 +69,17 @@ This is an **MCP (Model Context Protocol) server** for context engineering with 
    - `chore: update dependencies to latest versions`
 
 6. **Git commits** - CRITICAL WORKFLOW for Claude Code:
-   - **ALWAYS run validation BEFORE committing:**
-     ```bash
-     npm run typecheck && npm run test:coverage
-     ```
-   - **Wait for validation output** - check for errors before proceeding
    - **Show user `git status`** before committing
-   - **Only commit after validation passes**
-   - Pre-commit hooks run automatically (Husky): secret scan, typecheck, test:coverage, lint-staged
-   - Hook mirrors the manual validation (safety net)
-   - If hooks fail after manual validation passed: investigate why
+   - **Let pre-commit hooks validate** - do NOT run manual validation before commit
+   - Pre-commit hooks run automatically (Husky):
+     1. Secret scan (GitGuardian)
+     2. Auto-fix format/lint (lint-staged)
+     3. Type checking (typecheck - all files)
+     4. Tests with coverage (test:coverage - all files)
+   - **Wait for hook output** - hooks may take 30+ seconds to complete
+   - **If hooks pass** → commit succeeds, proceed
+   - **If hooks fail** → commit blocked, read error output, fix issues, retry
+   - Hooks auto-fix formatting, so a retry after hook failure often succeeds
    - Never use `--no-verify` unless explicitly requested by user
 
 ## Architecture

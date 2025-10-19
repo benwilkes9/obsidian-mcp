@@ -135,9 +135,6 @@ See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details.
 ### Secret Scanning
 
 This project uses [GitGuardian](https://www.gitguardian.com/) to prevent secrets from being committed.
-
-Dashboard: https://dashboard.gitguardian.com/
-
 **Local setup (optional but recommended):**
 
 See https://github.com/GitGuardian/ggshield
@@ -186,8 +183,9 @@ SonarCloud analyzes code quality, detects bugs, and tracks test coverage automat
 Husky runs the following checks before each commit:
 
 1. **ggshield secret scan**: Scans for API keys, tokens, and other secrets
-2. **lint-staged**: Formats and lints only changed files
-3. **test:coverage**: Runs all tests with coverage to ensure code quality
+2. **lint-staged**: Auto-formats and lints staged files
+3. **typecheck**: TypeScript type checking on all files
+4. **test:coverage**: Runs all tests with coverage to ensure code quality
 
 If any check fails, the commit will be blocked until issues are resolved.
 
