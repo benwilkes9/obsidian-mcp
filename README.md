@@ -123,6 +123,7 @@ GitHub Actions runs multiple checks in parallel on every push and pull request:
 
 **Code quality:**
 
+- **SonarCloud** - Code quality, bugs, and test coverage analysis
 - **Prettier** - Formatting check
 - **ESLint** - Linting
 - **TypeScript** - Type checking
@@ -161,6 +162,26 @@ semgrep scan --config .semgrep.yml
 ```
 
 Findings appear in GitHub's Security tab under "Code scanning alerts" when running in CI.
+
+### Code Quality with SonarCloud
+
+SonarCloud analyzes code quality, detects bugs, and tracks test coverage automatically in CI.
+
+**What it analyzes:**
+
+- **Code quality**: Code smells, technical debt, maintainability
+- **Reliability**: Bugs and potential runtime errors
+- **Security**: Vulnerabilities and security hotspots
+- **Coverage**: Test coverage tracking and trends
+- **Duplications**: Code duplication detection
+
+**View results:**
+
+- **Dashboard**: Quality gate status, metrics, and trends
+- **Pull requests**: Inline comments for new issues
+- **Security tab**: Vulnerability findings
+
+Results are available at: `https://sonarcloud.io/dashboard?id=benwilkes9_obsidian-mcp`
 
 ### Pre-commit Hooks
 
