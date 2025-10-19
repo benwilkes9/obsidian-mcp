@@ -1,17 +1,23 @@
 import { ObsidianMCPServer } from "../../server.js";
-import type {
-  MockRequestHandlerExtra,
-  MockToolArgs,
+import {
+  createVaultTestEnvironment,
+  type MockRequestHandlerExtra,
+  type MockToolArgs,
 } from "../../__tests__/test-utils.js";
 
 describe("hello tool", () => {
   let server: ObsidianMCPServer;
   let helloTool: ReturnType<ObsidianMCPServer["getTool"]>;
+  const vaultEnv = createVaultTestEnvironment("hello");
 
+  beforeAll(vaultEnv.setup);
+  afterAll(vaultEnv.teardown);
   beforeEach(() => {
+    vaultEnv.beforeEach();
     server = new ObsidianMCPServer();
     helloTool = server.getTool("hello");
   });
+  afterEach(vaultEnv.afterEach);
 
   describe("tool registration", () => {
     it("should register the hello tool", () => {

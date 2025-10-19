@@ -1,11 +1,17 @@
-import { ObsidianMCPServer } from "../server.js";
+import { ObsidianMCPServer, VaultConfigError } from "../server.js";
+import { createVaultTestEnvironment } from "./test-utils.js";
 
 describe("ObsidianMCPServer", () => {
   let server: ObsidianMCPServer;
+  const vaultEnv = createVaultTestEnvironment("server");
 
+  beforeAll(vaultEnv.setup);
+  afterAll(vaultEnv.teardown);
   beforeEach(() => {
+    vaultEnv.beforeEach();
     server = new ObsidianMCPServer();
   });
+  afterEach(vaultEnv.afterEach);
 
   describe("initialization", () => {
     it("should create a server instance", () => {
@@ -45,6 +51,86 @@ describe("ObsidianMCPServer", () => {
       expect(tools).toHaveLength(1);
       expect(tools[0].name).toBe("hello");
       expect(tools[0].description).toBe("Returns a hello world greeting");
+    });
+  });
+
+  describe("vault configuration", () => {
+    it("should configure vault on initialization", () => {
+      const vaultConfig = server.getVaultConfig();
+      expect(vaultConfig).toBeDefined();
+      expect(vaultConfig.path).toBe(vaultEnv.validVaultPath);
+    });
+
+    it("should provide access to vault configuration", () => {
+      const vaultConfig = server.getVaultConfig();
+      expect(vaultConfig).toHaveProperty("path");
+      expect(typeof vaultConfig.path).toBe("string");
+    });
+
+    it("should throw VaultConfigError when vault path is not set", () => {
+      delete process.env.OBSIDIAN_VAULT_PATH;
+
+      expect(() => new ObsidianMCPServer()).toThrow(VaultConfigError);
+      expect(() => new ObsidianMCPServer()).toThrow(
+        "OBSIDIAN_VAULT_PATH environment variable is required"
+      );
+    });
+
+    it("should throw VaultConfigError when vault path does not exist", () => {
+      process.env.OBSIDIAN_VAULT_PATH = "/path/to/nonexistent/vault";
+
+      expect(() => new ObsidianMCPServer()).toThrow(VaultConfigError);
+      expect(() => new ObsidianMCPServer()).toThrow(
+        /Vault path does not exist:/
+      );
+    });
+
+    it("should validate vault path before setting up tools", () => {
+      // This ensures the server fails fast on invalid configuration
+      delete process.env.OBSIDIAN_VAULT_PATH;
+
+      expect(() => {
+        const invalidServer = new ObsidianMCPServer();
+        // If we get here, validation failed
+        invalidServer.getTools(); // This should never execute
+      }).toThrow(VaultConfigError);
+    });
+  });
+
+  describe("BDD integration scenarios", () => {
+    it("should initialize successfully with valid vault path", () => {
+      // Given: Valid vault path is configured
+      process.env.OBSIDIAN_VAULT_PATH = vaultEnv.validVaultPath;
+
+      // When: Server is created
+      const testServer = new ObsidianMCPServer();
+
+      // Then: Server initializes with correct configuration
+      expect(testServer).toBeDefined();
+      expect(testServer.getVaultConfig().path).toBe(vaultEnv.validVaultPath);
+      expect(testServer.getTools()).toHaveLength(1);
+    });
+
+    it("should fail initialization with missing vault path", () => {
+      // Given: No vault path configured
+      delete process.env.OBSIDIAN_VAULT_PATH;
+
+      // When/Then: Server creation fails
+      expect(() => new ObsidianMCPServer()).toThrow(VaultConfigError);
+      expect(() => new ObsidianMCPServer()).toThrow(
+        "OBSIDIAN_VAULT_PATH environment variable is required"
+      );
+    });
+
+    it("should fail initialization with invalid vault path", () => {
+      // Given: Invalid vault path configured
+      process.env.OBSIDIAN_VAULT_PATH = "/invalid/vault/path";
+
+      // When/Then: Server creation fails with descriptive error
+      expect(() => new ObsidianMCPServer()).toThrow(VaultConfigError);
+      expect(() => new ObsidianMCPServer()).toThrow(
+        /Vault path does not exist:/
+      );
     });
   });
 });

@@ -1,12 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { tools } from "./tools/index.js";
+import {
+  configureVault,
+  type VaultConfig,
+  VaultConfigError,
+} from "./config/vault.js";
 
 export class ObsidianMCPServer {
   private server: McpServer;
   private tools: Map<string, ReturnType<McpServer["registerTool"]>> = new Map();
+  private vaultConfig: VaultConfig;
 
   constructor() {
+    // Validate and configure vault access
+    this.vaultConfig = configureVault();
+
     this.server = new McpServer({
       name: "obsidian-mcp",
       version: "0.1.0",
@@ -31,6 +40,7 @@ export class ObsidianMCPServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error("Obsidian MCP server running on stdio");
+    console.error(`Vault path: ${this.vaultConfig.path}`);
   }
 
   getServer(): McpServer {
@@ -47,4 +57,10 @@ export class ObsidianMCPServer {
       ...tool,
     }));
   }
+
+  getVaultConfig(): VaultConfig {
+    return this.vaultConfig;
+  }
 }
+
+export { VaultConfigError };
