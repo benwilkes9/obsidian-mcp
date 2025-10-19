@@ -114,14 +114,78 @@ Coverage reports are generated in the `coverage/` directory with HTML reports vi
 
 ### Continuous Integration
 
-GitHub Actions runs all quality checks (formatting, linting, type checking, tests, and build) on every push and pull request to a branch. See `.github/workflows/ci.yml` for details.
+GitHub Actions runs multiple checks in parallel on every push and pull request:
+
+**Security scans:**
+
+- **GitGuardian** - Detects hardcoded secrets and credentials
+- **Semgrep** - Finds security vulnerabilities and bug patterns
+
+**Code quality:**
+
+- **SonarCloud** - Code quality, bugs, and test coverage analysis
+- **Prettier** - Formatting check
+- **ESLint** - Linting
+- **TypeScript** - Type checking
+- **Jest** - Tests with coverage
+- **Build** - Compilation check
+
+See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details.
+
+### Secret Scanning
+
+This project uses [GitGuardian](https://www.gitguardian.com/) to prevent secrets from being committed.
+**Local setup (optional but recommended):**
+
+See https://github.com/GitGuardian/ggshield
+
+If ggshield is not installed, the pre-commit hook will skip secret scanning locally but will still run in CI.
+
+### Static Analysis with Semgrep
+
+Semgrep automatically scans for security vulnerabilities and bug patterns in CI. It's configured with:
+
+- **Auto-detection**: Uses community rules for TypeScript/Node.js
+- **Custom rules** for MCP servers (see [.semgrep.yml](.semgrep.yml)):
+
+**Local scanning (optional):**
+
+```bash
+# Run scan
+semgrep scan --config auto
+
+# Or use custom rules only
+semgrep scan --config .semgrep.yml
+```
+
+Findings appear in GitHub's Security tab under "Code scanning alerts" when running in CI.
+
+### Code Quality with SonarCloud
+
+SonarCloud analyzes code quality, detects bugs, and tracks test coverage automatically in CI.
+
+**What it analyzes:**
+
+- **Code quality**: Code smells, technical debt, maintainability
+- **Reliability**: Bugs and potential runtime errors
+- **Security**: Vulnerabilities and security hotspots
+- **Coverage**: Test coverage tracking and trends
+- **Duplications**: Code duplication detection
+
+**View results:**
+
+- **Dashboard**: Quality gate status, metrics, and trends
+- **Pull requests**: Inline comments for new issues
+- **Security tab**: Vulnerability findings
 
 ### Pre-commit Hooks
 
 Husky runs the following checks before each commit:
 
-- **lint-staged**: Formats and lints only changed files
-- **test:coverage**: Runs all tests with coverage to ensure code quality
+1. **ggshield secret scan**: Scans for API keys, tokens, and other secrets
+2. **lint-staged**: Auto-formats and lints staged files
+3. **typecheck**: TypeScript type checking on all files
+4. **test:coverage**: Runs all tests with coverage to ensure code quality
 
 If any check fails, the commit will be blocked until issues are resolved.
 

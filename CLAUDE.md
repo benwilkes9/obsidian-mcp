@@ -6,13 +6,81 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an **MCP (Model Context Protocol) server** for context engineering with local Obsidian vaults. It's built as an npm package that can be used both as a CLI tool and as an importable library.
 
-The codebase uses:
+**Tech stack:** TypeScript (ES modules), MCP SDK 1.19.1, Zod (validation), Jest (testing), Node.js 18+
 
-- **TypeScript** with ES modules (`"type": "module"`)
-- **MCP TypeScript SDK** (`@modelcontextprotocol/sdk`) version 1.19.1
-- **Zod** for schema validation
-- **Jest** for testing
-- Node.js 18+
+## CRITICAL Patterns
+
+**⚠️ These patterns are essential for MCP servers and will cause runtime errors if not followed:**
+
+1. **ES Module imports** - All **relative** imports MUST use `.js` extension in TypeScript:
+
+   ```typescript
+   import { ObsidianMCPServer } from "./server.js"; // ✅ Correct
+   import { ObsidianMCPServer } from "./server"; // ❌ Will fail at runtime
+   ```
+
+   TypeScript finds `.ts` files during compilation, but Node.js requires extensions for ES modules.
+
+2. **Logging in MCP servers** - Server runs over stdio, so:
+
+   ```typescript
+   console.error("Debug info"); // ✅ Use stderr for logging
+   console.log("Debug info"); // ❌ Corrupts stdio protocol
+   ```
+
+3. **Tool return structure** - All tools MUST return both:
+
+   ```typescript
+   {
+     content: [{ type: "text", text: "..." }],  // MCP protocol format
+     structuredContent: { /* typed object */ }   // Type-safe output
+   }
+   ```
+
+4. **Main module detection** - Use ES module pattern, NOT CommonJS:
+
+   ```typescript
+   import { fileURLToPath } from "url";
+   if (process.argv[1] === fileURLToPath(import.meta.url)) {
+     /* ... */
+   } // ✅
+   if (require.main === module) {
+     /* ... */
+   } // ❌ CommonJS pattern
+   ```
+
+5. **Commit messages** - Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+   ```
+   <type>(<scope>): <description>
+
+   [optional body]
+
+   [optional footer]
+   ```
+
+   **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `perf`
+
+   **Examples:**
+   - `feat(tools): add vault search tool`
+   - `fix(server): prevent memory leak in tool registry`
+   - `docs: update CLAUDE.md with testing guidelines`
+   - `test(hello): add edge case tests for empty inputs`
+   - `chore: update dependencies to latest versions`
+
+6. **Git commits** - CRITICAL WORKFLOW for Claude Code:
+   - **Show user `git status`** before committing
+   - **Let pre-commit hooks validate** - do NOT run manual validation before commit
+   - Pre-commit hooks run automatically (Husky):
+     1. Secret scan (GitGuardian)
+     2. Auto-fix format/lint (lint-staged)
+     3. Type checking (typecheck - all files)
+     4. Tests with coverage (test:coverage - all files)
+   - **Wait for hook output** - hooks may take 30+ seconds to complete
+   - **If hooks pass** → commit succeeds, proceed
+   - **If hooks fail** → commit blocked, read error output, fix issues, retry
+   - Hooks auto-fix formatting, so a retry after hook failure often succeeds
+   - Never use `--no-verify` unless explicitly requested by user
 
 ## Architecture
 
@@ -58,84 +126,75 @@ class ObsidianMCPServer {
 
 **Tool organization pattern:**
 
-- Each tool lives in its own folder under `src/tools/<tool-name>/`
-- Tool folder contains: `index.ts` (definition + handler) and `<tool-name>.test.ts` (tests)
-- All tools export a `ToolDefinition` object with: `name`, `config`, and `handler`
-- Tools are registered centrally in `src/tools/index.ts`
-- Server automatically registers all tools from the registry in `setupTools()`
-- Tools are registered using `McpServer.registerTool()` (high-level API, preferred)
-- All tools must return `{ content: [], structuredContent?: {} }`
-
-### MCP Protocol Specifics
-
-**ES Module Compatibility:**
-
-- Do NOT use `require.main === module` (CommonJS pattern)
-- For main module detection, use: `process.argv[1] === fileURLToPath(import.meta.url)`
-- Import `fileURLToPath` from `url` module
+- Each tool lives in its own folder: `src/tools/<tool-name>/`
+- Contains: `index.ts` (definition + handler) and `<tool-name>.test.ts` (co-located tests)
+- All tools export a `ToolDefinition` object: `{ name, config, handler }`
+- Tools registered centrally in `src/tools/index.ts`
+- Server auto-registers all tools via `setupTools()` using `McpServer.registerTool()` (high-level API)
 
 **MCP Server API:**
 
-- Use `McpServer` class (high-level) NOT `Server` class (low-level)
+- Use `McpServer` class (high-level), NOT `Server` class (low-level)
 - Connect via `StdioServerTransport` for local process communication
-- Server runs over stdio, logging must use `console.error()` not `console.log()`
+- Tools receive parsed/validated args matching `inputSchema`
+- Content types: `{ type: "text", text: string }` or `{ type: "resource_link", uri: string, ... }`
 
-**Tool Implementation:**
-
-- Tools receive parsed/validated args matching inputSchema
-- Return both `content` (array of content items) AND `structuredContent` (typed object)
-- Content items: `{ type: "text", text: string }`
-- Structured content matches outputSchema for type safety
-
-## Development Commands
+## Development
 
 ### Essential Commands
 
 ```bash
-npm run build              # Build TypeScript → JavaScript
-npm run watch              # Build with auto-rebuild on changes
-npm test                   # Run all tests
-npm test -- --watch        # Run tests in watch mode
-npm test -- hello.test.ts  # Run specific test file
-npm run test:coverage      # Run tests with coverage report
-npm run lint               # Check linting
-npm run typecheck          # TypeScript type checking
-npm run format             # Format all code with Prettier
-npm run format:check       # Check formatting without changes
+npm run build         # Build TypeScript → JavaScript
+npm test              # Run all tests
+npm run lint          # Check linting
+npm run typecheck     # TypeScript type checking
+npm run format        # Format code with Prettier
+
+# Testing variations
+npm test -- --watch            # Watch mode
+npm test -- hello.test.ts      # Specific test file
+npm run test:coverage          # With coverage report
+
+# Debugging
+npx @modelcontextprotocol/inspector node dist/cli.js  # MCP Inspector
 ```
 
-### Running the Server
+### CI/CD & Quality Tools
 
-```bash
-# After building:
-node dist/cli.js
+**Pre-commit hooks** (via Husky):
 
-# With MCP Inspector (for debugging):
-npx @modelcontextprotocol/inspector node dist/cli.js
-```
+- Secret scanning (GitGuardian - gracefully skips if not installed)
+- TypeScript type checking (all files)
+- Full test suite with coverage (all files)
+- Auto-format and lint staged files (lint-staged)
 
-### Quality Checks
+**CI pipeline** runs on all PRs/pushes in 2 stages:
 
-All quality checks run in CI (GitHub Actions):
+**Stage 1 - Fundamental Checks** (must pass before Stage 2 runs):
 
-```bash
-npm run format:check && npm run lint && npm run typecheck && npm test && npm run build
-```
+- Secret scanning (GitGuardian - fails if secrets detected)
+- Format check, lint, typecheck, tests, build (lint-and-test job)
 
-### Pre-commit Hooks
+**Stage 2 - Deep Analysis** (only runs if Stage 1 passes):
 
-Husky pre-commit hook automatically runs:
+- Static analysis (Semgrep - custom MCP rules + community rulesets)
+- Code quality analysis (SonarCloud - tracks coverage, bugs, security)
 
-1. **lint-staged** - Formats and lints only changed files (fast)
-2. **test:coverage** - Runs full test suite with coverage (ensures nothing breaks)
+**Custom Semgrep rules** prevent common MCP mistakes:
 
-To bypass pre-commit hooks (not recommended): `git commit --no-verify`
+- `mcp-no-console-log` - Enforces `console.error()` not `console.log()`
+- `node-path-traversal` - Prevents unsafe file path handling
+- `node-command-injection` - Catches shell injection vulnerabilities
+- `node-prefer-async-fs` - Suggests async file operations
+- `typescript-avoid-any` - Flags overly permissive `any` types
 
-## Testing MCP Tools
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed documentation on all CI tools, testing guidelines, and PR workflow.
 
-### Testing Philosophy
+## Testing
 
-**Test tool handlers directly** - Access registered tools and call their callbacks:
+### Approach
+
+**Test tool handlers directly** - NOT via MCP protocol layer:
 
 ```typescript
 const server = new ObsidianMCPServer();
@@ -143,90 +202,31 @@ const tool = server.getTool("hello");
 const result = await tool.callback({ name: "World" } as any, {} as any);
 ```
 
-**Do NOT test via MCP protocol layer** - We test the tool implementation, not protocol serialization.
+### Required Test Categories
 
-### Test Structure
+Every tool needs co-located tests in `src/tools/<tool-name>/<tool-name>.test.ts`:
 
-Every tool must have tests co-located in `src/tools/<tool-name>/<tool-name>.test.ts` with these categories:
-
-1. **Tool Registration Tests**
-   - Verify tool exists with correct metadata
-   - Check inputSchema/outputSchema are defined
-   - Confirm tool is enabled by default
-
-2. **Tool Execution Tests**
-   - Test with valid inputs
-   - Verify `content` array structure (MCP protocol)
-   - Verify `structuredContent` object (typed output)
-   - Test edge cases: empty strings, special chars, very long inputs
-
-3. **Input Validation Tests**
-   - Optional parameters work (undefined/missing)
-   - Invalid inputs handled gracefully
-
-4. **Output Consistency Tests**
-   - Same inputs → same outputs
-   - All results follow MCP structure
+1. **Tool Registration** - Verify tool exists with correct metadata, schemas defined
+2. **Tool Execution** - Valid inputs, `content` array + `structuredContent` object, edge cases
+3. **Input Validation** - Optional parameters, invalid input handling
+4. **Output Consistency** - Same inputs → same outputs, MCP structure compliance
 
 ### Test Helpers
 
-Located in `src/__tests__/test-utils.ts`:
+In [src/**tests**/test-utils.ts](src/__tests__/test-utils.ts):
 
 - `callToolCallback()` - Call tool with typed results
 - `expectValidToolResult()` - Verify MCP protocol compliance
 - `isTextContent()` - Type guard for content items
 - `getTextFromResult()` - Extract text from result
 
-### Test File Template
-
-```typescript
-import { ObsidianMCPServer } from "../../server";
-
-describe("my-tool", () => {
-  let server: ObsidianMCPServer;
-  let myTool: ReturnType<ObsidianMCPServer["getTool"]>;
-
-  beforeEach(() => {
-    server = new ObsidianMCPServer();
-    myTool = server.getTool("my-tool");
-  });
-
-  describe("tool registration", () => {
-    it("should register the tool", () => {
-      expect(myTool).toBeDefined();
-      expect(myTool?.title).toBe("My Tool");
-      expect(myTool?.inputSchema).toBeDefined();
-    });
-  });
-
-  describe("tool execution", () => {
-    it("should process input correctly", async () => {
-      if (!myTool) throw new Error("Tool not found");
-
-      const result = await myTool.callback(
-        { param: "value" } as any,
-        {} as any
-      );
-
-      expect(result.content[0]).toEqual({
-        type: "text",
-        text: "expected output",
-      });
-      expect(result.structuredContent).toEqual({
-        /* ... */
-      });
-    });
-  });
-});
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md#test-file-template) for complete test template.
 
 ## Adding New MCP Tools
 
-### Step-by-step Process
+### Quick Reference
 
-1. **Create tool folder:** `src/tools/<tool-name>/`
-
-2. **Create tool definition in `src/tools/<tool-name>/index.ts`:**
+1. Create `src/tools/<tool-name>/index.ts`:
 
 ```typescript
 import { z } from "zod";
@@ -237,18 +237,11 @@ export const myTool: ToolDefinition = {
   config: {
     title: "Display Name",
     description: "What this tool does",
-    inputSchema: {
-      param1: z.string().describe("Parameter description"),
-      param2: z.number().optional(),
-    },
-    outputSchema: {
-      result: z.string(),
-      count: z.number(),
-    },
+    inputSchema: { param1: z.string().describe("Description") },
+    outputSchema: { result: z.string() },
   },
-  handler: async ({ param1, param2 }) => {
-    // Implementation
-    const output = { result: "...", count: 42 };
+  handler: async ({ param1 }) => {
+    const output = { result: "..." };
     return {
       content: [{ type: "text", text: JSON.stringify(output) }],
       structuredContent: output,
@@ -257,65 +250,56 @@ export const myTool: ToolDefinition = {
 };
 ```
 
-3. **Register tool in `src/tools/index.ts`:**
+2. Register in [src/tools/index.ts](src/tools/index.ts):
 
 ```typescript
-import { helloTool } from "./hello/index.js";
-import { myTool } from "./tool-name/index.js"; // Add import
-import type { ToolDefinition } from "./types.js";
-
-export const tools: ToolDefinition[] = [
-  helloTool,
-  myTool, // Add to registry
-];
+import { myTool } from "./tool-name/index.js";
+export const tools: ToolDefinition[] = [helloTool, myTool];
 ```
 
-4. **Create test file `src/tools/<tool-name>/<tool-name>.test.ts`** following the test structure above
+3. Create tests in `src/tools/<tool-name>/<tool-name>.test.ts`
+4. Run `npm test -- <tool-name>.test.ts`
+5. Verify with MCP Inspector: `npm run build && npx @modelcontextprotocol/inspector node dist/cli.js`
 
-5. **Run tests:** `npm test -- <tool-name>.test.ts`
+### Requirements
 
-6. **Verify in MCP Inspector:**
+- ✅ Return both `content` and `structuredContent`
+- ✅ Use Zod schemas for input/output validation
+- ✅ Export `ToolDefinition` object with `name`, `config`, `handler`
+- ✅ Handler must be async, return `Promise<CallToolResult>`
+- ✅ Co-locate tests with tool implementation
 
-```bash
-npm run build
-npx @modelcontextprotocol/inspector node dist/cli.js
-```
+## Reference
 
-### Tool Implementation Requirements
+### Key Files
 
-- **Always return both `content` and `structuredContent`**
-- **Use Zod schemas** for input/output validation
-- **Handle optional parameters** with sensible defaults
-- **Export a `ToolDefinition` object** with `name`, `config`, and `handler`
-- **Handler must be async** and return `Promise<CallToolResult>`
-- **Co-locate tests** with tool implementation in same folder
-- **Log to stderr** if logging needed (`console.error()`)
+**Core:**
 
-## Key Files
+- [src/server.ts](src/server.ts) - `ObsidianMCPServer` class (tool registry iterator)
+- [src/cli.ts](src/cli.ts) - CLI entry point
+- [src/tools/index.ts](src/tools/index.ts) - Tool registry
+- [src/tools/types.ts](src/tools/types.ts) - `ToolDefinition` interface
 
-- `src/server.ts` - Core server class (iterates tool registry)
-- `src/cli.ts` - CLI entry point (minimal, just runs server)
-- `src/tools/index.ts` - Tool registry (exports all tools)
-- `src/tools/types.ts` - Shared `ToolDefinition` interface
-- `src/tools/hello/index.ts` - Example tool implementation
-- `src/tools/hello/hello.test.ts` - Example test showing all patterns
-- `src/__tests__/test-utils.ts` - Testing utilities
-- `src/__tests__/server.test.ts` - Server initialization tests
-- `jest.config.js` - Jest configured to exclude `test-utils.ts` from test runs
+**Examples:**
 
-## Common Patterns
+- [src/tools/hello/index.ts](src/tools/hello/index.ts) - Example tool implementation
+- [src/tools/hello/hello.test.ts](src/tools/hello/hello.test.ts) - Example test showing all patterns
 
-### Accessing Underlying MCP Server
+**Testing:**
 
-For advanced operations (notifications, custom handlers):
+- [src/**tests**/test-utils.ts](src/__tests__/test-utils.ts) - Testing utilities
+- [src/**tests**/server.test.ts](src/__tests__/server.test.ts) - Server initialization tests
+
+### Common Patterns
+
+**Access underlying MCP server** for advanced operations:
 
 ```typescript
 const obsidianServer = new ObsidianMCPServer();
 const mcpServer = obsidianServer.getServer();
-// Access mcpServer.server for low-level Server instance
 ```
 
-### Tool Callback Signature
+**Tool callback signature:**
 
 ```typescript
 type ToolCallback = (
@@ -324,20 +308,8 @@ type ToolCallback = (
 ) => CallToolResult | Promise<CallToolResult>;
 ```
 
-### MCP Content Types
+### Build & Package
 
-```typescript
-// Text content
-{ type: "text", text: string }
-
-// Resource link (for referencing files)
-{ type: "resource_link", uri: string, name?: string, mimeType?: string }
-```
-
-## Important Notes
-
-- **ES Modules:** All **relative** imports must use `.js` extension in TypeScript source files (e.g., `import { ObsidianMCPServer } from "./server.js"`). This is because TypeScript doesn't rewrite import paths, and Node.js requires extensions for ES modules. TypeScript will still find the `.ts` file during compilation. Package imports (e.g., `@modelcontextprotocol/sdk`) don't need extensions.
-- **Testing:** Test utils must NOT be picked up by Jest (uses `*.test.ts` pattern)
-- **Build:** TypeScript outputs to `dist/` with declaration files
-- **Package:** Exports both CLI (`bin`) and library (`main`, `types`, `exports`)
-- **MCP Inspector:** Essential tool for debugging MCP protocol interactions
+- **Build output:** `dist/` with TypeScript declaration files
+- **Exports:** Both CLI (`bin` field) and library (`main`, `types`, `exports` fields)
+- **Test pattern:** `*.test.ts` (excludes `test-utils.ts` from Jest runs)

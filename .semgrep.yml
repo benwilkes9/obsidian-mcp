@@ -1,0 +1,161 @@
+# Semgrep configuration for obsidian-mcp
+# https://semgrep.dev/docs/writing-rules/rule-syntax/
+
+rules:
+  # MCP Server specific: Prevent console.log in stdio servers
+  - id: mcp-no-console-log
+    pattern: console.log(...)
+    message: |
+      MCP servers run over stdio. Use console.error() for logging instead of console.log()
+      to avoid interfering with the MCP protocol communication.
+    languages: [typescript, javascript]
+    severity: WARNING
+    paths:
+      include:
+        - src/**
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # Security: Detect path traversal vulnerabilities
+  - id: node-path-traversal
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $PATH = $INPUT + ...
+              fs.$METHOD($PATH, ...)
+          - pattern: |
+              $PATH = `${$INPUT}...`
+              fs.$METHOD($PATH, ...)
+      - metavariable-pattern:
+          metavariable: $METHOD
+          patterns:
+            - pattern-either:
+                - pattern: readFile
+                - pattern: readFileSync
+                - pattern: writeFile
+                - pattern: writeFileSync
+                - pattern: unlink
+                - pattern: unlinkSync
+                - pattern: readdir
+                - pattern: readdirSync
+    message: |
+      Potential path traversal vulnerability. Validate and sanitize user input before
+      using it in file system operations. Use path.resolve() and check the result.
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  # Security: Detect command injection
+  - id: node-command-injection
+    patterns:
+      - pattern-either:
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: spawn($CMD, ...)
+          - pattern: spawnSync($CMD, ...)
+      - pattern-not: exec("...", ...)
+      - pattern-not: execSync("...", ...)
+    message: |
+      Potential command injection vulnerability. Avoid using user input in shell commands.
+      Use execFile() or pass arguments as an array instead of string concatenation.
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  # Best practice: Async file operations in Node.js
+  - id: node-prefer-async-fs
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFileSync(...)
+          - pattern: fs.writeFileSync(...)
+          - pattern: fs.readdirSync(...)
+      - pattern-not-inside: |
+          try {
+            ...
+          } catch (...) {
+            ...
+          }
+    message: |
+      Consider using async file operations (readFile, writeFile, readdir) instead of
+      sync versions to avoid blocking the event loop, unless you're in initialization code.
+    languages: [typescript, javascript]
+    severity: INFO
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect explicit 'any' in variable/parameter declarations
+  - id: typescript-any-declarations
+    patterns:
+      - pattern-either:
+          # Variable declarations
+          - pattern: "const $VAR: any = ..."
+          - pattern: "let $VAR: any = ..."
+          - pattern: "var $VAR: any = ..."
+          # Function parameters
+          - pattern: |
+              function $FUNC(..., $ARG: any, ...) { ... }
+          - pattern: |
+              const $FUNC = (..., $ARG: any, ...) => { ... }
+          # Function return types
+          - pattern: |
+              function $FUNC(...): any { ... }
+          - pattern: |
+              const $FUNC = (...): any => { ... }
+    message: |
+      Avoid explicit 'any' types in declarations. Consider alternatives:
+      - Use 'unknown' with type guards for better type safety
+      - Use specific union types if possible (e.g., 'string | number')
+      - Use generics for flexible but type-safe APIs
+
+      Only use 'any' when integrating with untyped libraries or as a last resort.
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect 'any' in array/record types
+  - id: typescript-any-collections
+    patterns:
+      - pattern-either:
+          - pattern: "any[]"
+          - pattern: Array<any>
+          - pattern: Record<string, any>
+          - pattern: Record<any, ...>
+          - pattern: Map<any, ...>
+          - pattern: Map<..., any>
+    message: |
+      Collection types with 'any' reduce type safety. Consider:
+      - For arrays: Use 'unknown[]' or specific union types
+      - For records: Use 'Record<string, unknown>' or define an interface
+      - For mixed types: Consider discriminated unions
+
+      Note: Record<string, any> is sometimes acceptable for JSON-like data.
+    languages: [typescript]
+    severity: INFO
+    paths:
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"
+
+  # TypeScript: Detect type assertions to 'any' outside tests
+  - id: typescript-any-assertions
+    pattern: "$EXPR as any"
+    message: |
+      Type assertion to 'any' bypasses TypeScript's type checking.
+      This is acceptable in test files but should be avoided in production code.
+
+      Consider:
+      - Using proper types instead of casting
+      - Using 'unknown' if the type is truly unknown, then narrow with type guards
+      - Fixing the underlying type issue rather than suppressing it
+    languages: [typescript]
+    severity: INFO
+    paths:
+      include:
+        - src/**
+      exclude:
+        - src/__tests__/**
+        - "*.test.ts"

@@ -1,0 +1,31 @@
+# Semgrep ignore patterns
+# https://semgrep.dev/docs/ignoring-files-folders-code/
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+build/
+*.js.map
+
+# Test coverage
+coverage/
+
+# Configuration files (low risk)
+*.config.js
+*.config.ts
+jest.config.js
+eslint.config.js
+
+# Documentation
+*.md
+docs/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
