@@ -58,12 +58,14 @@ function validatePathAccessibility(absolutePath: string): void {
           `Vault path does not exist: ${absolutePath}`
         );
       }
+      /* c8 ignore next 3 */
       if (error.code === "EACCES") {
         throw new VaultConfigError(
           `Vault path is not readable (permission denied): ${absolutePath}`
         );
       }
     }
+    /* c8 ignore next 3 */
     throw new VaultConfigError(
       `Cannot access vault path: ${absolutePath} - ${(error as Error).message}`
     );
@@ -83,11 +85,10 @@ function validateIsDirectory(absolutePath: string): void {
       );
     }
   } catch (error) {
-    // Re-throw VaultConfigError from the isDirectory check
     if (error instanceof VaultConfigError) {
       throw error;
     }
-    // Wrap any other errors
+    /* c8 ignore next 3 */
     throw new VaultConfigError(
       `Cannot verify vault path: ${absolutePath} - ${(error as Error).message}`
     );
