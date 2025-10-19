@@ -89,9 +89,9 @@ rules:
     patterns:
       - pattern-either:
           # Variable declarations
-          - pattern: const $VAR: any = ...
-          - pattern: let $VAR: any = ...
-          - pattern: var $VAR: any = ...
+          - pattern: "const $VAR: any = ..."
+          - pattern: "let $VAR: any = ..."
+          - pattern: "var $VAR: any = ..."
           # Function parameters
           - pattern: |
               function $FUNC(..., $ARG: any, ...) { ... }
@@ -142,7 +142,7 @@ rules:
 
   # TypeScript: Detect type assertions to 'any' outside tests
   - id: typescript-any-assertions
-    pattern: $EXPR as any
+    pattern: "$EXPR as any"
     message: |
       Type assertion to 'any' bypasses TypeScript's type checking.
       This is acceptable in test files but should be avoided in production code.
