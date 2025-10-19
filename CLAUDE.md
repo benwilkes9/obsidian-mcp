@@ -159,10 +159,15 @@ npx @modelcontextprotocol/inspector node dist/cli.js  # MCP Inspector
 - Format/lint staged files (lint-staged)
 - Full test suite with coverage
 
-**CI pipeline** runs on all PRs/pushes:
+**CI pipeline** runs on all PRs/pushes in 2 stages:
 
-- Format check, lint, typecheck, tests, build
+**Stage 1 - Fundamental Checks** (must pass before Stage 2 runs):
+
 - Secret scanning (GitGuardian - fails if secrets detected)
+- Format check, lint, typecheck, tests, build (lint-and-test job)
+
+**Stage 2 - Deep Analysis** (only runs if Stage 1 passes):
+
 - Static analysis (Semgrep - custom MCP rules + community rulesets)
 - Code quality analysis (SonarCloud - tracks coverage, bugs, security)
 

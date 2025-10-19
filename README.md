@@ -181,8 +181,6 @@ SonarCloud analyzes code quality, detects bugs, and tracks test coverage automat
 - **Pull requests**: Inline comments for new issues
 - **Security tab**: Vulnerability findings
 
-Results are available at: `https://sonarcloud.io/dashboard?id=benwilkes9_obsidian-mcp`
-
 ### Pre-commit Hooks
 
 Husky runs the following checks before each commit:
