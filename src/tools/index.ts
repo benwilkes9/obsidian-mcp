@@ -1,4 +1,5 @@
 import { helloTool } from "./hello/index.js";
+import { readObsidianFileTool } from "./read-obsidian-file/index.js";
 import type { ToolDefinition } from "./types.js";
 
 /**
@@ -7,6 +8,7 @@ import type { ToolDefinition } from "./types.js";
  */
 export const tools: ToolDefinition[] = [
   helloTool,
+  readObsidianFileTool,
   // Add additional tools here as they are implemented
 ];
 

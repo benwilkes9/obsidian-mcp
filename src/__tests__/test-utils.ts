@@ -109,3 +109,85 @@ export function expectToolMetadata(
     expect(tool.outputSchema).toBeDefined();
   }
 }
+
+/**
+ * Vault environment setup helper for tests
+ *
+ * Sets up and tears down vault path environment variable and test directories.
+ * Use this in test suites that need to test vault configuration.
+ *
+ * @example
+ * ```typescript
+ * const vaultEnv = createVaultTestEnvironment('my-test-suite');
+ *
+ * beforeAll(vaultEnv.setup);
+ * afterAll(vaultEnv.teardown);
+ * beforeEach(vaultEnv.beforeEach);
+ * afterEach(vaultEnv.afterEach);
+ * ```
+ */
+export function createVaultTestEnvironment(testSuiteName: string) {
+  const { join } = require("path");
+  const { mkdirSync, rmSync } = require("fs");
+
+  const testDir = join(process.cwd(), `test-vaults-${testSuiteName}`);
+  const validVaultPath = join(testDir, "valid-vault");
+  const originalEnv = process.env.OBSIDIAN_VAULT_PATH;
+
+  return {
+    testDir,
+    validVaultPath,
+
+    /**
+     * Call in beforeAll - creates test directories
+     */
+    setup: () => {
+      mkdirSync(testDir, { recursive: true });
+      mkdirSync(validVaultPath, { recursive: true });
+    },
+
+    /**
+     * Call in afterAll - removes test directories and restores environment
+     */
+    teardown: () => {
+      rmSync(testDir, { recursive: true, force: true });
+
+      if (originalEnv) {
+        process.env.OBSIDIAN_VAULT_PATH = originalEnv;
+      } else {
+        delete process.env.OBSIDIAN_VAULT_PATH;
+      }
+    },
+
+    /**
+     * Call in beforeEach - sets valid vault path
+     */
+    beforeEach: () => {
+      process.env.OBSIDIAN_VAULT_PATH = validVaultPath;
+    },
+
+    /**
+     * Call in afterEach - resets to valid vault path
+     */
+    afterEach: () => {
+      process.env.OBSIDIAN_VAULT_PATH = validVaultPath;
+    },
+
+    /**
+     * Helper to create a temporary test directory
+     */
+    createTempDir: (name: string) => {
+      const tempPath = join(testDir, name);
+      mkdirSync(tempPath, { recursive: true });
+      return tempPath;
+    },
+
+    /**
+     * Helper to remove a temporary test directory
+     */
+    removeTempDir: (name: string) => {
+      const tempPath = join(testDir, name);
+      rmSync(tempPath, { recursive: true, force: true });
+    },
+  };
+}
