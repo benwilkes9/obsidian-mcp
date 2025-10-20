@@ -48,9 +48,17 @@ describe("ObsidianMCPServer", () => {
 
     it("should return all registered tools", () => {
       const tools = server.getTools();
-      expect(tools).toHaveLength(1);
-      expect(tools[0].name).toBe("hello");
-      expect(tools[0].description).toBe("Returns a hello world greeting");
+      expect(tools).toHaveLength(2);
+
+      const helloTool = tools.find((t) => t.name === "hello");
+      expect(helloTool).toBeDefined();
+      expect(helloTool?.description).toBe("Returns a hello world greeting");
+
+      const readTool = tools.find((t) => t.name === "read_obsidian_file");
+      expect(readTool).toBeDefined();
+      expect(readTool?.description).toContain(
+        "Reads and returns the full content of a markdown file"
+      );
     });
   });
 
@@ -108,7 +116,7 @@ describe("ObsidianMCPServer", () => {
       // Then: Server initializes with correct configuration
       expect(testServer).toBeDefined();
       expect(testServer.getVaultConfig().path).toBe(vaultEnv.validVaultPath);
-      expect(testServer.getTools()).toHaveLength(1);
+      expect(testServer.getTools()).toHaveLength(2);
     });
 
     it("should fail initialization with missing vault path", () => {
