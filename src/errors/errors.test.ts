@@ -409,7 +409,9 @@ describe("error handling module", () => {
         logError(error, "test_context");
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[test_context] USER: File not found"
+          "[test_context]",
+          "USER:",
+          "File not found"
         );
       });
 
@@ -418,7 +420,9 @@ describe("error handling module", () => {
         logError(error, "test_context");
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[test_context] CONFIGURATION: Config missing"
+          "[test_context]",
+          "CONFIGURATION:",
+          "Config missing"
         );
       });
 
@@ -427,7 +431,9 @@ describe("error handling module", () => {
         logError(error, "test_context");
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[test_context] SYSTEM ERROR:",
+          "[test_context]",
+          "SYSTEM",
+          "ERROR:",
           "System failure"
         );
         // Stack trace should be logged on second call
@@ -442,7 +448,9 @@ describe("error handling module", () => {
         logError(error, "test_context");
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[test_context] PERMISSION ERROR:",
+          "[test_context]",
+          "PERMISSION",
+          "ERROR:",
           "Access denied"
         );
         expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
@@ -453,7 +461,8 @@ describe("error handling module", () => {
         logError(error);
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          " UNEXPECTED ERROR:",
+          "",
+          "UNEXPECTED ERROR:",
           error
         );
       });
@@ -462,14 +471,15 @@ describe("error handling module", () => {
         const error = new FileReadError("Test error", ErrorCategory.USER);
         logError(error);
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith(" USER: Test error");
+        expect(consoleErrorSpy).toHaveBeenCalledWith("", "USER:", "Test error");
       });
 
       it("should handle non-Error objects", () => {
         logError("String error", "context");
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[context] UNEXPECTED ERROR:",
+          "[context]",
+          "UNEXPECTED ERROR:",
           "String error"
         );
       });

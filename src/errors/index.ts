@@ -191,16 +191,16 @@ export function logError(error: unknown, context?: string): void {
       error.category === ErrorCategory.USER ||
       error.category === ErrorCategory.CONFIGURATION
     ) {
-      console.error(`${prefix} ${error.category}: ${error.message}`);
+      console.error(prefix, error.category + ":", error.message);
     } else {
       // System and permission errors are logged with more detail
-      console.error(`${prefix} ${error.category} ERROR:`, error.message);
+      console.error(prefix, error.category, "ERROR:", error.message);
       if (error.stack) {
         console.error(error.stack);
       }
     }
   } else {
     // Unknown errors get full stack traces
-    console.error(`${prefix} UNEXPECTED ERROR:`, error);
+    console.error(prefix, "UNEXPECTED ERROR:", error);
   }
 }
