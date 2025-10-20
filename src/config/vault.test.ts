@@ -1,6 +1,7 @@
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { configureVault, VaultConfigError } from "./vault.js";
+import { configureVault } from "./vault.js";
+import { VaultConfigError } from "../errors/index.js";
 import { createVaultTestEnvironment } from "../__tests__/test-utils.js";
 
 describe("vault configuration", () => {
@@ -262,7 +263,7 @@ describe("vault configuration", () => {
       process.env.OBSIDIAN_VAULT_PATH = invalidPath;
 
       expect(() => configureVault()).toThrow(VaultConfigError);
-      expect(() => configureVault()).toThrow(/Cannot access vault path:/);
+      expect(() => configureVault()).toThrow(/Error accessing directory:/);
     });
   });
 });

@@ -1,23 +1,12 @@
 import { readdir } from "fs/promises";
 import { join, basename, extname } from "path";
-
-export class FileDiscoveryError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "FileDiscoveryError";
-  }
-}
+import {
+  FileDiscoveryError,
+  isErrnoException,
+  getErrorMessageForCode,
+} from "../errors/index.js";
 
 const MARKDOWN_EXTENSIONS = [".md", ".markdown"];
-
-function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof (error as NodeJS.ErrnoException).code === "string"
-  );
-}
 
 function isHidden(name: string): boolean {
   return name.startsWith(".");
@@ -78,7 +67,6 @@ async function searchDirectory(
       }
     }
   } catch (error) {
-    /* c8 ignore next 5 */
     if (isErrnoException(error) && error.code === "EACCES") {
       console.error(
         `Warning: Permission denied accessing directory: ${dirPath}`
@@ -109,15 +97,26 @@ export async function findFile(
     if (isErrnoException(error)) {
       if (error.code === "ENOENT") {
         throw new FileDiscoveryError(
-          `Vault directory does not exist: ${vaultPath}`
+          [
+            `Vault directory does not exist: ${vaultPath}`,
+            "Verify OBSIDIAN_VAULT_PATH is set correctly",
+          ].join("\n")
         );
       }
-      /* c8 ignore next 3 */
       if (error.code === "EACCES") {
         throw new FileDiscoveryError(
-          `Permission denied accessing vault: ${vaultPath}`
+          [
+            `Permission denied accessing vault: ${vaultPath}`,
+            "Check directory permissions on the vault",
+          ].join("\n")
         );
       }
+      const friendlyMessage = getErrorMessageForCode(
+        error.code ?? "UNKNOWN",
+        vaultPath,
+        "directory"
+      );
+      throw new FileDiscoveryError(friendlyMessage);
     }
     throw new FileDiscoveryError(
       `Error searching vault: ${(error as Error).message}`

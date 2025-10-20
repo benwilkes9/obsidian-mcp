@@ -1,11 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { tools } from "./tools/index.js";
-import {
-  configureVault,
-  type VaultConfig,
-  VaultConfigError,
-} from "./config/vault.js";
+import { configureVault, type VaultConfig } from "./config/vault.js";
+import { VaultConfigError } from "./errors/index.js";
 
 export class ObsidianMCPServer {
   private server: McpServer;

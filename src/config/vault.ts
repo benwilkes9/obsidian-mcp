@@ -1,5 +1,10 @@
 import { accessSync, constants, statSync } from "fs";
 import { resolve } from "path";
+import {
+  VaultConfigError,
+  isErrnoException,
+  getErrorMessageForCode,
+} from "../errors/index.js";
 
 /**
  * Configuration for Obsidian vault access
@@ -10,35 +15,17 @@ export interface VaultConfig {
 }
 
 /**
- * Custom error for vault configuration issues
- */
-export class VaultConfigError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "VaultConfigError";
-  }
-}
-
-/**
- * Type guard to check if an error is a Node.js ErrnoException
- */
-function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof (error as NodeJS.ErrnoException).code === "string"
-  );
-}
-
-/**
  * Validates that the environment variable is set and not empty
  * @throws {VaultConfigError} If OBSIDIAN_VAULT_PATH is not set or empty
  */
 function validateEnvironmentVariable(vaultPath: string | undefined): string {
   if (!vaultPath) {
     throw new VaultConfigError(
-      "OBSIDIAN_VAULT_PATH environment variable is required"
+      [
+        "OBSIDIAN_VAULT_PATH environment variable is required",
+        "Set this variable to the absolute path of your Obsidian vault directory",
+        'Example: export OBSIDIAN_VAULT_PATH="/Users/username/Documents/Vault"',
+      ].join("\n")
     );
   }
   return vaultPath;
@@ -55,17 +42,27 @@ function validatePathAccessibility(absolutePath: string): void {
     if (isErrnoException(error)) {
       if (error.code === "ENOENT") {
         throw new VaultConfigError(
-          `Vault path does not exist: ${absolutePath}`
+          [
+            `Vault path does not exist: ${absolutePath}`,
+            "Verify the path exists and OBSIDIAN_VAULT_PATH is set correctly",
+          ].join("\n")
         );
       }
-      /* c8 ignore next 3 */
       if (error.code === "EACCES") {
         throw new VaultConfigError(
-          `Vault path is not readable (permission denied): ${absolutePath}`
+          [
+            `Vault path is not readable (permission denied): ${absolutePath}`,
+            "Check directory permissions: chmod +r on the vault directory",
+          ].join("\n")
         );
       }
+      const friendlyMessage = getErrorMessageForCode(
+        error.code ?? "UNKNOWN",
+        absolutePath,
+        "directory"
+      );
+      throw new VaultConfigError(friendlyMessage);
     }
-    /* c8 ignore next 3 */
     throw new VaultConfigError(
       `Cannot access vault path: ${absolutePath} - ${(error as Error).message}`
     );
@@ -88,7 +85,6 @@ function validateIsDirectory(absolutePath: string): void {
     if (error instanceof VaultConfigError) {
       throw error;
     }
-    /* c8 ignore next 3 */
     throw new VaultConfigError(
       `Cannot verify vault path: ${absolutePath} - ${(error as Error).message}`
     );

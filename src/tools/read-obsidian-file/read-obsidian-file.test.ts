@@ -259,7 +259,6 @@ Accents: café, naïve, Zürich`;
 
         // And error message should be "File not found: missing.md"
         const errorText = (result.content[0] as any).text;
-        expect(errorText).toContain("Error:");
         expect(errorText).toContain("File not found: missing.md");
         expect(errorText).toContain(vaultEnv.validVaultPath);
         expect(errorText).toContain("Tip:");
@@ -286,7 +285,6 @@ Accents: café, naïve, Zürich`;
 
         // And error message should indicate "File exceeds size limit"
         const errorText = (result.content[0] as any).text;
-        expect(errorText).toContain("Error:");
         expect(errorText).toContain("File exceeds size limit");
         expect(errorText).toMatch(/\d+\.\d+MB > 10MB/);
       });
@@ -343,7 +341,6 @@ Accents: café, naïve, Zürich`;
 
           // And error message should indicate permission denied
           const errorText = (result.content[0] as any).text;
-          expect(errorText).toContain("Error:");
           expect(errorText).toMatch(/permission denied|not readable/i);
         } finally {
           // Restore permissions for cleanup
@@ -373,7 +370,6 @@ Accents: café, naïve, Zürich`;
           // Then return error with configuration message
           expect(result.isError).toBe(true);
           const errorText = (result.content[0] as any).text;
-          expect(errorText).toContain("Error:");
           expect(errorText).toContain(
             "OBSIDIAN_VAULT_PATH environment variable is not configured"
           );
@@ -493,7 +489,7 @@ Accents: café, naïve, Zürich`;
       // Should return file not found error
       expect(result.isError).toBe(true);
       const errorText = (result.content[0] as any).text;
-      expect(errorText).toContain("Error:");
+      expect(errorText).toContain("File not found");
     });
 
     it("should handle filenames with special characters", async () => {

@@ -1,6 +1,7 @@
 import { writeFileSync, mkdirSync, readdirSync, rmSync, statSync } from "fs";
 import { join } from "path";
-import { findFile, FileDiscoveryError } from "./file-discovery.js";
+import { findFile } from "./file-discovery.js";
+import { FileDiscoveryError } from "../errors/index.js";
 import { createVaultTestEnvironment } from "../__tests__/test-utils.js";
 
 describe("file discovery", () => {
@@ -325,7 +326,7 @@ describe("file discovery", () => {
         FileDiscoveryError
       );
       await expect(findFile(invalidPath, "test")).rejects.toThrow(
-        /Error searching vault:/
+        /Error accessing directory:/
       );
     });
   });
